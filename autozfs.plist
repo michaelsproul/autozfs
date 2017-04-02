@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC -//Apple Computer//DTD PLIST 1.0//EN http://www.apple.com/DTDs/PropertyList-1.0.dtd >
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>autozfs</string>
+    <key>Program</key>
+    <string>/usr/local/bin/autozfs</string>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+	<key>StandardErrorPath</key>
+	<string>/private/var/log/autozfs.err</string>
+	<key>StandardOutPath</key>
+    <string>/private/var/log/autozfs.log</string>
+</dict>
+</plist>

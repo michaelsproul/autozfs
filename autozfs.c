@@ -16,8 +16,9 @@ void zfsImportAll(DADiskRef UNUSED(disk), void * UNUSED(ctxt)) {
     if (exitCode == 0) {
         printf("Done! Run `zpool list` to see if anything was imported.\n");
     } else {
-        printf("Oh shit, that failed hard! Exit code: %d\n", exitCode);
+        printf("Oh shit, that failed hard! Exit code for `zpool import -a`: %d\n", exitCode);
     }
+    fflush(stdout);
 }
 
 int main() {

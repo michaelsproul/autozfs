@@ -39,14 +39,14 @@ events, and each time it detects a disk connection it runs `zpool import -a`. Si
 
 * You should be able to see a process called `autozfs` running, check Activity Monitor, `ps`,
   `htop` or whatever.
-* The dameon logs inane messages to `/private/var/log/autozfs.{log,err}`.
+* The daemon logs inane messages to `/private/var/log/autozfs.{log,err}`.
 
 ## Caveats
 
 * OS X only (for now).
 * IMPORTS ALL POOLS. This is hacky.
 * Assumes `zpool` is installed in `/usr/local/bin`. This may not be true of all systems...
-* Only auto-mounts USB devices, but it's an artifical restriction -- delete the USB stuff
+* Only auto-mounts USB devices, but it's an artificial restriction -- delete the USB stuff
   in the source and it should do Firewire/Thunderbolt/whatever just fine.
 
 ## License

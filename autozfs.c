@@ -9,6 +9,40 @@
 // Based on:
 // https://developer.apple.com/library/content/documentation/DriversKernelHardware/Conceptual/DiskArbitrationProgGuide/ArbitrationBasics/ArbitrationBasics.html#//apple_ref/doc/uid/TP40009310-CH2-SW2
 
+char * removeLastCharacterFromDatasetName(char *datasetName) {
+    datasetName[strlen(datasetName) - 1] = '\0';
+    return datasetName;
+}
+
+void mountZFSDatasetsForPool(char *zpoolName) {
+    char *zfsDatasetNamesCommand = "/usr/local/bin/zfs list -t filesystem -H -o name";
+
+    FILE *fp = popen(zfsDatasetNamesCommand,"r");
+    char datasetName[1000];
+    while (fgets(datasetName, 1000, fp) != NULL) {
+        char *properDatasetName = removeLastCharacterFromDatasetName(datasetName);
+
+        char * token = strtok(properDatasetName, "/");
+        if (strcmp(token, zpoolName) == 0) {
+            token = strtok(NULL, "/");
+            if (token != NULL) {
+                char *mountableDatasetName;
+                asprintf(&mountableDatasetName, "%s/%s", properDatasetName, token);
+
+                char *datasetMountCommand;
+                asprintf(&datasetMountCommand, "security find-generic-password -a '%s' -w | /usr/local/bin/zfs mount -l '%s'", token, mountableDatasetName);
+
+                int exitCode = system(datasetMountCommand);
+                if (exitCode == 0) {
+                    printf("dataset %s mounted.\n", mountableDatasetName);
+                } else {
+                    printf("Error! Exit code for `%s`: %d\n", datasetMountCommand, exitCode);
+                }
+            }
+        }
+    }
+}
+
 void zfsImportAll(DADiskRef disk, void * UNUSED(ctxt)) {
     const char *bsdDiskName = DADiskGetBSDName(disk);
     printf("New disk plugged in.\n");
@@ -38,6 +72,7 @@ void zfsImportAll(DADiskRef disk, void * UNUSED(ctxt)) {
                 int exitCode = system(zpoolImportCommand);
                 if (exitCode == 0) {
                     printf("zpool %s imported.\n", zpoolName);
+                    mountZFSDatasetsForPool(zpoolName);
                 } else {
                     printf("Error! Exit code for `%s`: %d\n", zpoolImportCommand, exitCode);
                 }

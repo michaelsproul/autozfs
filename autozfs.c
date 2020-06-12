@@ -9,14 +9,40 @@
 // Based on:
 // https://developer.apple.com/library/content/documentation/DriversKernelHardware/Conceptual/DiskArbitrationProgGuide/ArbitrationBasics/ArbitrationBasics.html#//apple_ref/doc/uid/TP40009310-CH2-SW2
 
-void zfsImportAll(DADiskRef UNUSED(disk), void * UNUSED(ctxt)) {
-    printf("Wubba lubba dub dub! Importing your disks!\n");
+void zfsImportAll(DADiskRef disk, void * UNUSED(ctxt)) {
+    const char *bsdDiskName = DADiskGetBSDName(disk);
+    printf("New disk plugged in.\n");
+    printf("BSD name assigned to disk: %s\n", bsdDiskName);
     fflush(stdout);
-    int exitCode = system("/usr/local/bin/zpool import -a");
-    if (exitCode == 0) {
-        printf("Done! Run `zpool list` to see if anything was imported.\n");
-    } else {
-        printf("Oh shit, that failed hard! Exit code for `zpool import -a`: %d\n", exitCode);
+
+    char *partitionTypeCommand;
+    asprintf(&partitionTypeCommand, "diskutil list %s | grep ZFS | awk '{print $2}' | tr -d '\n'", bsdDiskName);
+
+    FILE *fp = popen(partitionTypeCommand,"r");
+    char partitionType[4];
+    if (fgets(partitionType, 4, fp) != NULL) {
+        if (strcmp(partitionType, "ZFS") == 0) {
+            printf("ZFS disk detected.\n");
+
+            char *zpoolNameCommand;
+            asprintf(&zpoolNameCommand, "diskutil list %s | grep ZFS | awk '{print $3}' | tr -d '\n'", bsdDiskName);
+
+            FILE *fp1 = popen(zpoolNameCommand,"r");
+            char zpoolName[1000];
+            if (fgets(zpoolName, 1000, fp1) != NULL) {
+                printf("zpool name: %s\n", zpoolName);
+
+                char *zpoolImportCommand;
+                asprintf(&zpoolImportCommand, "/usr/local/bin/zpool import '%s'", zpoolName);
+
+                int exitCode = system(zpoolImportCommand);
+                if (exitCode == 0) {
+                    printf("zpool %s imported.\n", zpoolName);
+                } else {
+                    printf("Error! Exit code for `%s`: %d\n", zpoolImportCommand, exitCode);
+                }
+            }
+        }
     }
     fflush(stdout);
 }

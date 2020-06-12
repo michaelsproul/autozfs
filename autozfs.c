@@ -14,6 +14,25 @@ char * removeLastCharacterFromDatasetName(char *datasetName) {
     return datasetName;
 }
 
+char * getPoolNameFromDiskUtilLine(char *line) {
+    char * token = strtok(line, " "); // Get first column
+    token = strtok(NULL, " "); // Get second column
+    token = strtok(NULL, " "); // Get third column (this is where the name starts)
+
+    char *name = "";
+    asprintf(&name, "%s", token);
+    token = strtok(NULL, " "); // Get fourth column
+    while (token != NULL) {
+        if (isdigit(token[0])) {
+            break;
+        }
+        asprintf(&name, "%s %s", name, token);
+        token = strtok(NULL, " ");
+    }
+
+    return name;
+}
+
 void mountZFSDatasetsForPool(char *zpoolName) {
     char *zfsDatasetNamesCommand = "/usr/local/bin/zfs list -t filesystem -H -o name";
 
@@ -59,11 +78,12 @@ void zfsImportAll(DADiskRef disk, void * UNUSED(ctxt)) {
             printf("ZFS disk detected.\n");
 
             char *zpoolNameCommand;
-            asprintf(&zpoolNameCommand, "diskutil list %s | grep ZFS | awk '{print $3}' | tr -d '\n'", bsdDiskName);
+            asprintf(&zpoolNameCommand, "diskutil list %s | grep ZFS | tr -d '\n'", bsdDiskName);
 
             FILE *fp1 = popen(zpoolNameCommand,"r");
-            char zpoolName[1000];
-            if (fgets(zpoolName, 1000, fp1) != NULL) {
+            char zpoolNameLine[1000];
+            if (fgets(zpoolNameLine, 1000, fp1) != NULL) {
+                char *zpoolName = getPoolNameFromDiskUtilLine(zpoolNameLine);
                 printf("zpool name: %s\n", zpoolName);
 
                 char *zpoolImportCommand;

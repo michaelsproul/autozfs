@@ -49,7 +49,7 @@ void mountZFSDatasetsForPool(char *zpoolName) {
                 asprintf(&mountableDatasetName, "%s/%s", properDatasetName, token);
 
                 char *datasetMountCommand;
-                asprintf(&datasetMountCommand, "security find-generic-password -a '%s' -w | /usr/local/bin/zfs mount -l '%s'", token, mountableDatasetName);
+                asprintf(&datasetMountCommand, "security find-generic-password -a \"%s\" -w | /usr/local/bin/zfs mount -l \"%s\"", token, mountableDatasetName);
 
                 int exitCode = system(datasetMountCommand);
                 if (exitCode == 0) {
@@ -87,7 +87,7 @@ void zfsImportAll(DADiskRef disk, void * UNUSED(ctxt)) {
                 printf("zpool name: %s\n", zpoolName);
 
                 char *zpoolImportCommand;
-                asprintf(&zpoolImportCommand, "/usr/local/bin/zpool import '%s'", zpoolName);
+                asprintf(&zpoolImportCommand, "/usr/local/bin/zpool import \"%s\"", zpoolName);
 
                 int exitCode = system(zpoolImportCommand);
                 if (exitCode == 0) {

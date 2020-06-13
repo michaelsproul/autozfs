@@ -9,27 +9,11 @@
 // Based on:
 // https://developer.apple.com/library/content/documentation/DriversKernelHardware/Conceptual/DiskArbitrationProgGuide/ArbitrationBasics/ArbitrationBasics.html#//apple_ref/doc/uid/TP40009310-CH2-SW2
 
-char * removeLastCharacterFromDatasetName(char *datasetName) {
-    datasetName[strlen(datasetName) - 1] = '\0';
-    return datasetName;
-}
-
-char * getPoolNameFromDiskUtilLine(char *line) {
-    char * token = strtok(line, " "); // Get first column
-    token = strtok(NULL, " "); // Get second column
-    token = strtok(NULL, " "); // Get third column (this is where the name starts)
-
-    char *name = "";
-    asprintf(&name, "%s", token);
-    token = strtok(NULL, " "); // Get fourth column
-    while (token != NULL) {
-        if (isdigit(token[0])) {
-            break;
-        }
-        asprintf(&name, "%s %s", name, token);
-        token = strtok(NULL, " ");
+// This is required to get rid of the newline character from the end of the name.
+char * removeLastCharacterFromName(char *name) {
+    if (isspace(name[strlen(name) - 1])) {
+        name[strlen(name) - 1] = '\0';
     }
-
     return name;
 }
 
@@ -39,7 +23,7 @@ void mountZFSDatasetsForPool(char *zpoolName) {
     FILE *fp = popen(zfsDatasetNamesCommand,"r");
     char datasetName[1000];
     while (fgets(datasetName, 1000, fp) != NULL) {
-        char *properDatasetName = removeLastCharacterFromDatasetName(datasetName);
+        char *properDatasetName = removeLastCharacterFromName(datasetName);
 
         char * token = strtok(properDatasetName, "/");
         if (strcmp(token, zpoolName) == 0) {
@@ -62,7 +46,7 @@ void mountZFSDatasetsForPool(char *zpoolName) {
     }
 }
 
-void zfsImportAll(DADiskRef disk, void * UNUSED(ctxt)) {
+void zfsImport(DADiskRef disk, void * UNUSED(ctxt)) {
     const char *bsdDiskName = DADiskGetBSDName(disk);
     printf("New disk plugged in.\n");
     printf("BSD name assigned to disk: %s\n", bsdDiskName);
@@ -77,24 +61,30 @@ void zfsImportAll(DADiskRef disk, void * UNUSED(ctxt)) {
         if (strcmp(partitionType, "ZFS") == 0) {
             printf("ZFS disk detected.\n");
 
-            char *zpoolNameCommand;
-            asprintf(&zpoolNameCommand, "diskutil list %s | grep ZFS | tr -d '\n'", bsdDiskName);
+            char *diskPartitionCommand;
+            asprintf(&diskPartitionCommand, "diskutil list %s | grep ZFS | awk '{print $NF}' | tr -d '\n'", bsdDiskName);
 
-            FILE *fp1 = popen(zpoolNameCommand,"r");
-            char zpoolNameLine[1000];
-            if (fgets(zpoolNameLine, 1000, fp1) != NULL) {
-                char *zpoolName = getPoolNameFromDiskUtilLine(zpoolNameLine);
-                printf("zpool name: %s\n", zpoolName);
+            FILE *fp1 = popen(diskPartitionCommand,"r");
+            char bsdPartitionName[100];
+            if (fgets(bsdPartitionName, 100, fp1) != NULL) {
+                char *zpoolNameCommand;
+                asprintf(&zpoolNameCommand, "diskutil info %s | grep \"Volume Name\" | awk '{ s = \"\"; for (i = 3; i <= NF; i++) s = s $i \" \"; print s }' | tr -d '\n'", bsdPartitionName);
 
-                char *zpoolImportCommand;
-                asprintf(&zpoolImportCommand, "/usr/local/bin/zpool import \"%s\"", zpoolName);
+                FILE *fp2 = popen(zpoolNameCommand,"r");
+                char zpoolNameOut[1000];
+                if (fgets(zpoolNameOut, 1000, fp2) != NULL) {
+                    char *zpoolName = removeLastCharacterFromName(zpoolNameOut);
+                    printf("zpool name: %s\n", zpoolName);
 
-                int exitCode = system(zpoolImportCommand);
-                if (exitCode == 0) {
-                    printf("zpool %s imported.\n", zpoolName);
-                    mountZFSDatasetsForPool(zpoolName);
-                } else {
-                    printf("Error! Exit code for `%s`: %d\n", zpoolImportCommand, exitCode);
+                    char *zpoolImportCommand;
+                    asprintf(&zpoolImportCommand, "/usr/local/bin/zpool import \"%s\"", zpoolName);
+                    int exitCode = system(zpoolImportCommand);
+                    if (exitCode == 0) {
+                        printf("zpool %s imported.\n", zpoolName);
+                        mountZFSDatasetsForPool(zpoolName);
+                    } else {
+                        printf("Error! Exit code for `%s`: %d\n", zpoolImportCommand, exitCode);
+                    }
                 }
             }
         }
@@ -119,7 +109,7 @@ int main() {
         kDADiskDescriptionMediaWholeKey,
         kCFBooleanTrue);
 
-    DARegisterDiskPeekCallback(sesh, matchingDict, 0, zfsImportAll, NULL);
+    DARegisterDiskPeekCallback(sesh, matchingDict, 0, zfsImport, NULL);
 
     DASessionScheduleWithRunLoop(sesh, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
     CFRunLoopRun();

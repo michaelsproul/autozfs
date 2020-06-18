@@ -1,8 +1,10 @@
-CC=clang
-CFLAGS=-W -Wall -Wextra -std=c11
+CXX=g++
+CXXFLAGS=-Wall -pedantic -g -std=c++17
+CC=$(CXX)
+CFLAGS=$(CXXFLAGS)
 LDFLAGS=-framework CoreFoundation -framework DiskArbitration
 
-autozfs: autozfs.c
+autozfs: autozfs.cpp
 
 install:
 	sudo cp autozfs /usr/local/bin/

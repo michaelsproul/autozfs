@@ -1,10 +1,13 @@
 #include <cstdio>
 #include <iostream>
+#include <signal.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <DiskArbitration/DiskArbitration.h>
 #include <IOKit/storage/IOStorageProtocolCharacteristics.h>
 
 using namespace std;
+
+DASessionRef sesh;
 
 void removeBlankSpaceFromName(string &name) {
     if (isspace(name[name.size() - 1])) {
@@ -52,8 +55,18 @@ void zfsImport(DADiskRef disk, void *ctxt) {
     }
 }
 
+void exitHandler(int signum) {
+    cout << "Deregistering from system... " << endl;
+    DASessionUnscheduleFromRunLoop(sesh, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
+    CFRelease(sesh);
+    exit(signum);
+}
+
 int main() {
-    DASessionRef sesh = DASessionCreate(kCFAllocatorDefault);
+    sesh = DASessionCreate(kCFAllocatorDefault);
+
+    // Register method for ctrl+c callback
+    signal(SIGINT, exitHandler);
 
     CFMutableDictionaryRef matchingDict = CFDictionaryCreateMutable(
         kCFAllocatorDefault,
@@ -73,8 +86,4 @@ int main() {
 
     DASessionScheduleWithRunLoop(sesh, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
     CFRunLoopRun();
-
-    // TODO: maybe run these on Ctrl-C?
-    DASessionUnscheduleFromRunLoop(sesh, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode);
-    CFRelease(sesh);
 }

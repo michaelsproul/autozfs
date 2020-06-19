@@ -6,11 +6,13 @@ LDFLAGS=-framework CoreFoundation -framework DiskArbitration
 
 autozfs: autozfs.cpp
 
-install:
+install: autozfs
 	sudo cp autozfs /usr/local/bin/
 	sudo cp autozfs.plist /Library/LaunchDaemons/
+	sudo launchctl load -w /Library/LaunchDaemons/autozfs.plist
 
 uninstall:
+	sudo launchctl unload -w /Library/LaunchDaemons/autozfs.plist
 	sudo rm /usr/local/bin/autozfs
 	sudo rm /Library/LaunchDaemons/autozfs.plist
 	sudo rm /private/var/log/autozfs.err

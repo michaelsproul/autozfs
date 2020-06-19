@@ -9,48 +9,30 @@ using namespace std;
 
 DASessionRef sesh;
 
-void removeBlankSpaceFromName(string &name) {
-    if (isspace(name[name.size() - 1])) {
-        name = name.substr(0, name.size() - 1);
-    }
-}
-
 void zfsImport(DADiskRef disk, void *ctxt) {
     const string bsdDiskName = DADiskGetBSDName(disk);
     cout << "New disk plugged in." << endl;
     cout << "BSD name assigned to disk: " << bsdDiskName << endl;
 
-    const string partitionTypeCommand = "diskutil list " + bsdDiskName + " | grep ZFS | awk '{print $2}' | tr -d '\n'";
-    FILE *fp = popen(partitionTypeCommand.c_str(),"r");
-    char partitionType[4];
-    if (fgets(partitionType, 4, fp) != NULL) {
-        if (strcmp(partitionType, "ZFS") == 0) {
-            cout << "ZFS disk detected." << endl;
+    string bsdPartitionName = bsdDiskName + "s1";
+    DADiskRef diskPartition = DADiskCreateFromBSDName(NULL, sesh, bsdPartitionName.c_str());
 
-            const string diskPartitionCommand = "diskutil list " + bsdDiskName + " | grep ZFS | awk '{print $NF}' | tr -d '\n'";
-            FILE *fp1 = popen(diskPartitionCommand.c_str(),"r");
-            char bsdPartitionNameBuffer[100];
-            if (fgets(bsdPartitionNameBuffer, 100, fp1) != NULL) {
-                const string bsdPartitionName(bsdPartitionNameBuffer);
-                cout << "BSD partition name: " << bsdPartitionName << endl;
+    CFDictionaryRef partinfo = DADiskCopyDescription(diskPartition);
 
-                const string zpoolNameCommand = "diskutil info " + bsdPartitionName + " | grep \"Volume Name\" | awk '{ s = \"\"; for (i = 3; i <= NF; i++) s = s $i \" \"; print s }' | tr -d '\n'";
-                FILE *fp2 = popen(zpoolNameCommand.c_str(),"r");
-                char zpoolNameBuffer[1000];
-                if (fgets(zpoolNameBuffer, 1000, fp2) != NULL) {
-                    string zpoolName(zpoolNameBuffer);
-                    removeBlankSpaceFromName(zpoolName);
-                    cout << "Zpool name: " << zpoolName << endl;
+    CFStringRef partitionType = (CFStringRef)CFDictionaryGetValue(partinfo, kDADiskDescriptionVolumeKindKey);
+    if (CFEqual(partitionType, CFSTR("zfs"))) {
+        cout << "ZFS disk detected." << endl;
 
-                    const string zpoolImportCommand = "/usr/local/bin/zpool import \"" + zpoolName + "\"";
-                    int exitCode = system(zpoolImportCommand.c_str());
-                    if (exitCode == 0) {
-                        cout << "Zpool " << zpoolName << " imported." << endl;
-                    } else {
-                        cout << "Command: " << zpoolImportCommand << " failed with error: " << exitCode << endl;
-                    }
-                }
-            }
+        CFStringRef volumeNameRef = (CFStringRef)CFDictionaryGetValue(partinfo, kDADiskDescriptionVolumeNameKey);
+        const string volumeName = CFStringGetCStringPtr(volumeNameRef, kCFStringEncodingUTF8);
+        cout << "Volume name: " << volumeName << endl;
+
+        const string zpoolImportCommand = "/usr/local/bin/zpool import \"" + volumeName + "\"";
+        int exitCode = system(zpoolImportCommand.c_str());
+        if (exitCode == 0) {
+            cout << "Zpool " << volumeName << " imported." << endl;
+        } else {
+            cout << "Command: " << zpoolImportCommand << " failed with error: " << exitCode << endl;
         }
     }
 }

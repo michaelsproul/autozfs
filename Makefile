@@ -21,6 +21,14 @@ uninstall:
 	sudo rm /private/var/log/autozfs.err
 	sudo rm /private/var/log/autozfs.log
 
+start:
+	sudo launchctl load -w /Library/LaunchDaemons/autozfs.plist
+
+stop:
+	sudo launchctl unload -w /Library/LaunchDaemons/autozfs.plist
+
+restart: stop start
+
 clean:
 	rm -f autozfs
 

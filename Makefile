@@ -6,6 +6,9 @@ LDFLAGS=-framework CoreFoundation -framework DiskArbitration
 
 autozfs: autozfs.cpp
 
+run: autozfs
+	./autozfs
+
 install: autozfs
 	sudo cp autozfs /usr/local/bin/
 	sudo cp autozfs.plist /Library/LaunchDaemons/

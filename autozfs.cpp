@@ -37,7 +37,7 @@ void mountZFSDatasets(string poolName) {
                     string mountedStatus = removeLastCharacterFromName(mountedStatusOutput);
                     if (mountedStatus.compare("no") == 0) {
                         // Mount this dataset.
-                        const string datasetMountCommand = "security find-generic-password -a \"" + volumeName + "\" -w | sudo /usr/local/bin/zfs mount -l \"" + properDatasetName + "\"";
+                        const string datasetMountCommand = "/usr/bin/security find-generic-password -a \"" + volumeName + "\" -w | sudo /usr/local/bin/zfs mount -l \"" + properDatasetName + "\"";
                         int exitCode = system(datasetMountCommand.c_str());
                         if (exitCode == 0) {
                             cout << "Dataset " << properDatasetName << " mounted." << endl;
@@ -73,7 +73,7 @@ void zfsImport(DADiskRef disk, void *ctxt) {
         int exitCode = system(zpoolImportCommand.c_str());
         if (exitCode == 0) {
             cout << "Zpool " << volumeName << " imported." << endl;
-            mountZFSDatasets(volumeName);
+            // mountZFSDatasets(volumeName);
         } else {
             cout << "Command: " << zpoolImportCommand << " failed with error: " << exitCode << endl;
         }

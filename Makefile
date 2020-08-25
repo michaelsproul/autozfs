@@ -1,5 +1,5 @@
 CXX=g++
-CXXFLAGS=-Wall -pedantic -g -std=c++17
+CXXFLAGS=-Wall -pedantic -g -std=c++17 -O3
 CC=$(CXX)
 CFLAGS=$(CXXFLAGS)
 LDFLAGS=-framework CoreFoundation -framework DiskArbitration
@@ -20,8 +20,8 @@ uninstall:
 	sudo rm /usr/local/bin/autozfs
 	sudo rm /Library/LaunchDaemons/autozfs.plist
 	sudo rm /etc/sudoers.d/zfs
-	sudo rm /tmp/autozfs.err
-	sudo rm /tmp/autozfs.log
+	sudo rm /private/var/log/autozfs.err
+	sudo rm /private/var/log/autozfs.log
 
 start:
 	sudo launchctl load -w /Library/LaunchDaemons/autozfs.plist

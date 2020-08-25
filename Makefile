@@ -12,12 +12,14 @@ run: autozfs
 install: autozfs
 	sudo cp autozfs /usr/local/bin/
 	sudo cp autozfs.plist /Library/LaunchDaemons/
+	sudo cp sudoers_zfs /etc/sudoers.d/zfs
 	sudo launchctl load -w /Library/LaunchDaemons/autozfs.plist
 
 uninstall:
 	sudo launchctl unload -w /Library/LaunchDaemons/autozfs.plist
 	sudo rm /usr/local/bin/autozfs
 	sudo rm /Library/LaunchDaemons/autozfs.plist
+	sudo rm /etc/sudoers.d/zfs
 	sudo rm /tmp/autozfs.err
 	sudo rm /tmp/autozfs.log
 

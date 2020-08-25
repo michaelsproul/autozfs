@@ -1,0 +1,3 @@
+viraj ALL=(ALL) NOPASSWD: /usr/local/bin/zfs
+viraj ALL=(ALL) NOPASSWD: /usr/local/bin/zpool
+

@@ -30,6 +30,10 @@ Then either reboot, or run:
 $ sudo launchctl load /Library/LaunchDaemons/autozfs.plist
 ```
 
+## Persmissions
+
+In order for this service to work as expected, you need to allow 'autozfs' 'Full Disk Access' in the macOS privacy pane.
+
 ## How does it work?
 
 A background daemon started via `launchd` and running as root listens for "Disk Arbitration"

@@ -27,7 +27,7 @@ void zfsImport(DADiskRef disk, void *ctxt) {
         const string volumeName = CFStringGetCStringPtr(volumeNameRef, kCFStringEncodingUTF8);
         cout << "Volume name: " << volumeName << endl;
 
-        const string zpoolImportCommand = "/usr/local/bin/zpool import \"" + volumeName + "\"\0";
+        const string zpoolImportCommand = "sudo /usr/local/bin/zpool import \"" + volumeName + "\"\0";
         int exitCode = system(zpoolImportCommand.c_str());
         if (exitCode == 0) {
             cout << "Zpool " << volumeName << " imported." << endl;

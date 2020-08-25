@@ -15,9 +15,15 @@
     <true/>
     <key>RunAtLoad</key>
     <true/>
+    <key>UserName</key>
+    <string>viraj</string>
+    <key>SessionCreate</key>
+    <true/>
+    <key>InitGroups</key>
+    <true/>
 	<key>StandardErrorPath</key>
-	<string>/private/var/log/autozfs.err</string>
+	<string>/tmp/autozfs.err</string>
 	<key>StandardOutPath</key>
-    <string>/private/var/log/autozfs.log</string>
+    <string>/tmp/autozfs.log</string>
 </dict>
 </plist>

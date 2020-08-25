@@ -9,6 +9,48 @@ using namespace std;
 
 DASessionRef sesh;
 
+// This is required to get rid of the newline character from the end of the name.
+string removeLastCharacterFromName(char *name) {
+    if (isspace(name[strlen(name) - 1])) {
+        name[strlen(name) - 1] = '\0';
+    }
+    return name;
+}
+
+void mountZFSDatasets(string poolName) {
+    // Loop through all datasets
+    const string zfsDatasetNamesCommand = "/usr/local/bin/zfs list -t filesystem -H -o name";
+    FILE *fp = popen(zfsDatasetNamesCommand.c_str(), "r");
+    char datasetName[1000];
+    while (fgets(datasetName, 1000, fp) != NULL) {
+        string properDatasetName = removeLastCharacterFromName(datasetName);
+        size_t foundSlash = properDatasetName.find("/");
+        if (foundSlash != string::npos) {
+            string token = properDatasetName.substr(0, properDatasetName.find("/"));
+            string volumeName = properDatasetName.substr(properDatasetName.find("/") + 1);
+            if (token.compare(poolName) == 0) {
+                // This dataset belongs to this zpool.
+                const string checkMountStatusCommand = "/usr/local/bin/zfs get -H -o value mounted \"" + properDatasetName + "\"";
+                FILE *fp1 = popen(checkMountStatusCommand.c_str(), "r");
+                char mountedStatusOutput[3];
+                if (fgets(mountedStatusOutput, 3, fp1) != NULL) {
+                    string mountedStatus = removeLastCharacterFromName(mountedStatusOutput);
+                    if (mountedStatus.compare("no") == 0) {
+                        // Mount this dataset.
+                        const string datasetMountCommand = "security find-generic-password -a \"" + volumeName + "\" -w | sudo /usr/local/bin/zfs mount -l \"" + properDatasetName + "\"";
+                        int exitCode = system(datasetMountCommand.c_str());
+                        if (exitCode == 0) {
+                            cout << "Dataset " << properDatasetName << " mounted." << endl;
+                        } else {
+                            cout << "Command: " << datasetMountCommand << " failed with error: " << exitCode << endl;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 void zfsImport(DADiskRef disk, void *ctxt) {
     const string bsdDiskName = DADiskGetBSDName(disk);
     cout << "New disk plugged in." << endl;
@@ -31,6 +73,7 @@ void zfsImport(DADiskRef disk, void *ctxt) {
         int exitCode = system(zpoolImportCommand.c_str());
         if (exitCode == 0) {
             cout << "Zpool " << volumeName << " imported." << endl;
+            mountZFSDatasets(volumeName);
         } else {
             cout << "Command: " << zpoolImportCommand << " failed with error: " << exitCode << endl;
         }

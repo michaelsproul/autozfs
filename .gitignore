@@ -1,3 +1,5 @@
 *.swp
+*.dSYM
 .DS_Store
+.vscode
 autozfs
